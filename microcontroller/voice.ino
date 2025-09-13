@@ -1,75 +1,77 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <Audio.h>
+#include "Audio.h"  // From ESP32-audioI2S library
 
-// Your WiFi
+// Replace with your Wi-Fi credentials
 const char* ssid = "HackTheNorth";
 const char* password = "HTN2025!";
 
-// API endpoints
-const char* generate_url = "https://example.com/api/generate";  // triggers mp3 generation
-String mp3_url = "";  // will be filled from JSON
+// Endpoints
+const char* gen_url = "http://example.com/api/generate";
+String fetch_url = "http://example.com/api/fetch/";
 
-// I2S pins (adjust for your wiring)
-#define I2S_BCLK 26
-#define I2S_LRC 25
-#define I2S_DOUT 22
-
+// Audio player
 Audio audio;
 
 void setup() {
   Serial.begin(115200);
 
-  // WiFi connect
+  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
-  Serial.println("Connecting to WiFi...");
+  Serial.print("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nConnected!");
+  Serial.println(" Connected!");
 
-  // Step 1: Trigger MP3 generation
+  // Step 1: Initiate generation
   HTTPClient http;
-  http.begin(generate_url);
+  http.begin(gen_url);
   int httpCode = http.GET();
   if (httpCode == 200) {
     String payload = http.getString();
-    Serial.println("Generation response:");
-    Serial.println(payload);
+    Serial.println("Generation Response: " + payload);
 
-    // Step 2: Parse JSON for mp3_url
-    StaticJsonDocument<1024> doc;
-    DeserializationError err = deserializeJson(doc, payload);
-    if (!err && doc["mp3_url"]) {
-      mp3_url = String((const char*)doc["mp3_url"]);
-      Serial.println("MP3 URL: " + mp3_url);
-    } else {
-      Serial.println("Could not parse mp3_url!");
-    }
+    // Parse JSON
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, payload);
+    String id = doc["id"];
+    fetch_url += id;
   } else {
-    Serial.printf("HTTP request failed, code: %d\n", httpCode);
+    Serial.println("Generation request failed!");
+    return;
   }
   http.end();
 
-  // Step 3: Setup I2S output
-  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  audio.setVolume(18); // 0–21
+  // Step 2: Fetch MP3 URL
+  http.begin(fetch_url);
+  httpCode = http.GET();
+  String mp3url;
+  if (httpCode == 200) {
+    String payload = http.getString();
+    Serial.println("Fetch Response: " + payload);
 
-  // Step 4: Stream MP3 if we got a URL
-  if (mp3_url.length() > 0) {
-    Serial.println("Starting playback...");
-    audio.connecttohost(mp3_url.c_str());
+    // Parse JSON
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, payload);
+    mp3url = doc["url"].as<String>();
+    Serial.println("MP3 URL: " + mp3url);
+  } else {
+    Serial.println("Fetch request failed!");
+    return;
   }
+  http.end();
+
+  // Step 3: Play MP3 from URL
+  // I2S pin setup (adjust for your wiring + amp)
+  audio.setPinout(26, 25, 22); // BCLK, LRC, DOUT
+  audio.setVolume(15);         // 0...21
+  audio.connecttohost(mp3url.c_str());
 }
 
 void loop() {
-  audio.loop();  // must be called repeatedly
-}
-
-// Optional debug callback
-void audio_info(const char* info) {
-  Serial.print("Audio info: ");
-  Serial.println(info);
+  // Keep feeding audio stream
+  audio.loop();
 }
