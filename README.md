@@ -1,3 +1,0 @@
-# obama
-
-realistic obama
