@@ -1,0 +1,8 @@
+openai>=1.40.0
+requests>=2.31.0
+pydub>=0.25.1
+sounddevice>=0.4.6
+numpy>=1.26.0
+simpleaudio>=1.0.4
+python-dotenv>=1.0.1
+pygame>=2.5.2

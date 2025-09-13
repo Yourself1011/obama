@@ -1,14 +1,16 @@
 import requests
 import time
 import os
+import math
+from io import BytesIO
+from pydub import AudioSegment
 
 # Authorization token (keep safe!)
-AUTH_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJhMzZmMzE2Yy1jZDk3LTQxZDQtYmIwMS0wNTNhZTQ5OTJhMjUiLCJ1c2VyQWNjb3VudCI6ImxpZmVuZy55aW4uMDdAZ21haWwuY29tIn0.lq_Rh71fgNFDoRqS7mQ6ZyC0VD2hidMMN5ubUK2664o"
 
 HEADERS = {
     "client": "tts",
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {AUTH_TOKEN}"
+    "Authorization": f"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJmM2E0NjJhMC00ODM2LTQ3ZTUtOTQ4YS1iODQ3NGJmNWMwNjUiLCJ1c2VyQWNjb3VudCI6ImplZmZyZXkuekBoYWNrdGhlNml4LmNvbSJ9.9GobqzAkeg0rzr5JVyhdTSZuPy5kxDY0vi2ifezFHA0"
 }
 
 
@@ -39,6 +41,9 @@ def generate_tts(text):
 
     resp = requests.post(url, headers=HEADERS, json=data)
     resp.raise_for_status()
+    print(resp.json())
+    if (resp.json()["available_count"] == 0):
+        raise Exception("No available TTS")
     return resp.json()
 
 
@@ -48,29 +53,61 @@ def fetch_latest_mp3():
         resp = requests.get(url, headers=HEADERS)
         resp.raise_for_status()
         data = resp.json()
-        items = data.get("data", {}).get("items", [])
-        if items:
-            file_url = items[0].get("url")
-            if file_url:
-                return file_url
+        # Try multiple known response shapes
+        file_url = None
+        try:
+            # Shape A: { "files": [ { "cover": { "url": "..." } } ] }
+            files = data.get("files")
+            if isinstance(files, list) and files:
+                file_url = files[0].get("cover", {}).get("url")
+        except Exception:
+            pass
+        if not file_url:
+            try:
+                # Shape B: { "data": { "list": [ { "fileUrl": "..." } ] } }
+                file_url = data.get("data", {}).get(
+                    "list", [{}])[0].get("fileUrl")
+            except Exception:
+                pass
+        if file_url:
+            return file_url
         print("Waiting for generation...")
         time.sleep(2)
 
 
-def save_mp3(file_url, filename="output.mp3"):
-    resp = requests.get(file_url, stream=True)
+def save_mp3(file_url, filename="output.mp3", volume_factor=4):
+    """Download MP3, increase volume, and save.
+
+    volume_factor: linear amplitude multiplier (1.5 = +50%).
+    Requires ffmpeg installed and accessible for pydub.
+    """
+    resp = requests.get(file_url)
     resp.raise_for_status()
-    with open(filename, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=8192):
-            f.write(chunk)
-    print(f"Saved MP3 as {filename}")
+
+    # Load MP3 from memory, apply gain in dB, and export
+    audio = AudioSegment.from_file(BytesIO(resp.content), format="mp3")
+    gain_db = 20 * math.log10(volume_factor)
+    louder = audio.apply_gain(gain_db)
+    louder.export(filename, format="mp3")
+    print(f"Saved MP3 as {filename} (+{gain_db:.2f} dB)")
 
 
 if __name__ == "__main__":
-    text = "SPOKEN TEXT GOES HERE"
+    # index = 9
+    # for phrase in ["my name is fork boy. i resemble a fork", "If you’re walking down the right path and you’re willing to keep walking, eventually you’ll make progress.", "Hope is not blind optimism.", "Change doesn’t come from Washington. Change comes to Washington.", "This is not about me. This is about us.", "We rise or fall as one nation, as one people.", "America is not a collection of red states and blue states, but the United States.", "The arc of history is long, but it bends toward justice.", "Our destiny is not written for us, but by us.", "We are one people.", "There’s not a liberal America and a conservative America — there’s the United States of America.", "I stand here knowing that my story is part of the larger American story.", "We can’t wait.", "That’s not who we are.", "The future rewards those who press on.", "I believe in the American Dream."]:
+    #     print("Requesting TTS generation...")
+    #     generate_tts(phrase)
+
+    #     print("Fetching latest MP3 URL...")
+    #     mp3_url = fetch_latest_mp3()
+    #     save_mp3(mp3_url, f"obama_{index}.mp3")
+    #     save_mp3(mp3_url, f"output.mp3")
+    #     index += 1
+
     print("Requesting TTS generation...")
-    generate_tts(text)
+    generate_tts(
+        "Uhhh... hmmm. Yes. Let me be clear")
 
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
-    save_mp3(mp3_url)
+    save_mp3(mp3_url, f"output.mp3")
