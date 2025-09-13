@@ -3,12 +3,20 @@ from pydub.playback import play
 import numpy as np
 import threading
 import time
+import gpiozero
+from gpiozero.pins.lgpio import LGPIOFactory
+from time import sleep
+
+lgpioFactory = LGPIOFactory()
+mouthServo = gpiozero.AngularServo(27, min_angle=0, max_angle = 180, pin_factory=lgpioFactory)
+car = gpiozero.Robot(left=gpiozero.Motor(3, 2), right=gpiozero.Motor(17, 4))
 
 # Fake servo control function
-
+mouthServo.angle = 45
 
 def rotate(degrees):
     print(f"Servo -> {degrees:.1f}°")
+    mouthServo.angle = degrees
 
 
 def animate_servo_with_audio(audio, update_interval=0.05, max_angle=30):
@@ -47,7 +55,7 @@ def play_audio(audio):
 
 
 if __name__ == "__main__":
-    audio = AudioSegment.from_file("mp3s/bee.mp3").set_channels(1)
+    audio = AudioSegment.from_file("testaudio.mp3").set_channels(1)
 
     # Start playback in another thread
     t = threading.Thread(target=play_audio, args=(audio,))
