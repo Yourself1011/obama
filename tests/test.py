@@ -6,8 +6,8 @@ from time import sleep
 pigpioFactory = PiGPIOFactory()
 mouthServo = gpiozero.AngularServo(27, min_angle=0, max_angle = 180, pin_factory=pigpioFactory)
 
-mult = 1
-i = 80 * (1 / mult)
+mult = 10
+i = 0 * (1 / mult)
 while True:
     mouthServo.angle = i * mult
     print(i * mult)
