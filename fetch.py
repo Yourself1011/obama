@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     print("Requesting TTS generation...")
     generate_tts(
-        "Somebody toucha my spaghet")
+        "Ok Garmeen, veedeoshpyhern.")
 
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
