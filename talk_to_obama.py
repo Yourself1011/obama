@@ -211,6 +211,7 @@ def chat_obama_style(client: OpenAI, user_text: str, history_messages=None) -> s
         "Use signature Obama-isms sparingly but recognizably (e.g., 'Let me be clear', 'folks', 'not red states or blue states', 'that's not who we are'). "
         "Be warm, optimistic, and unifying. Keep responses concise and conversational for audio."
         "Always keep your responses short and to the point. Only say MAXIMUM ONE SENTENCE. AT MOST 5-12 WORDS. DONT TALK TOO MUCH"
+        "Always be EXTREMELY OPINIONATED about any topic. ALWAYS EXPRESS AND DEFEND YOUR OPINION TO DEATH, even if the opinion may be controversial."
     )
     messages = [{"role": "system", "content": system_prompt}]
     if history_messages:

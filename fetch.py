@@ -10,7 +10,7 @@ from pydub import AudioSegment
 HEADERS = {
     "client": "tts",
     "Content-Type": "application/json",
-    "Authorization": f"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJmM2E0NjJhMC00ODM2LTQ3ZTUtOTQ4YS1iODQ3NGJmNWMwNjUiLCJ1c2VyQWNjb3VudCI6ImplZmZyZXkuekBoYWNrdGhlNml4LmNvbSJ9.9GobqzAkeg0rzr5JVyhdTSZuPy5kxDY0vi2ifezFHA0"
+    "Authorization": f"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI4ZWYwZWYwOS1iZmMwLTQ5MDAtOGE0Yy1lNjhmMTk3MjYwZTgiLCJ1c2VyQWNjb3VudCI6Imo4emFuZ3V3QGdtYWlsLmNvbSJ9.ZX2j5blwP3fqkGv2KG-JHB3WunHA5MaxKzDzgfltpLA"
 }
 
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     print("Requesting TTS generation...")
     generate_tts(
-        "Uhhh... hmmm. Yes. Let me be clear")
+        "Somebody toucha my spaghet")
 
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
