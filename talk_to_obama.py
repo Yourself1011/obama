@@ -6,20 +6,15 @@ import wave
 import threading
 from typing import List, Optional
 import numpy as np
-import requests
 import sounddevice as sd
 from pydub import AudioSegment
 from pydub.playback import play
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Reuse Obama TTS helpers from fetch.py
-# These rely on the AUTH_TOKEN defined in fetch.py for the FineShare API.
-try:
-    from fetch import generate_tts, fetch_latest_mp3, save_mp3
-except Exception as e:
-    print("Failed to import helpers from fetch.py:", e)
-    sys.exit(1)
+# Obama TTS helpers and speaker
+from utils.generate import generate_tts, fetch_latest_mp3, save_mp3
+from utils.speak import speak_audio
 
 
 def record_audio_wav(output_path: str, duration_sec: int = 10, sample_rate: int = 16000):
@@ -234,7 +229,7 @@ def tts_obama_and_play(text: str):
     _ = generate_tts(text)
 
     # Start placeholder playback immediately in background
-    placeholder_path = os.path.join(os.getcwd(), "letmebeclear.mp3")
+    placeholder_path = os.path.join(os.getcwd(), "mp3s/letmebeclear.mp3")
     placeholder_thread = None
     try:
         if os.path.exists(placeholder_path):
@@ -267,7 +262,7 @@ def tts_obama_and_play(text: str):
             time.sleep(0.3)
 
         print("Playing Obama voice...")
-        play(audio)
+        speak_audio(audio)
 
 
 def main():

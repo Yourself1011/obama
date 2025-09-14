@@ -1,3 +1,5 @@
+# Loops speaking random snippets from /mp3s
+
 import random
 import time
 import os
@@ -7,8 +9,8 @@ import pygame
 AUDIO_DIR = "./mp3s"
 
 # Random interval range (seconds)
-MIN_WAIT = 5
-MAX_WAIT = 15
+MIN_WAIT = 4
+MAX_WAIT = 12
 
 
 def get_audio_files():

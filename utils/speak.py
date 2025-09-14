@@ -3,19 +3,50 @@ from pydub.playback import play
 import numpy as np
 import threading
 import time
-import gpiozero
-from gpiozero.pins.pigpio import PiGPIOFactory
 from time import sleep
 import random
 
-pigpioFactory = PiGPIOFactory()
-mouthServo = gpiozero.AngularServo(27, min_angle=0, max_angle = 180, pin_factory=pigpioFactory)
-armServo1 = gpiozero.AngularServo(14, min_angle=0, max_angle = 180, pin_factory=pigpioFactory)
-armServo2 = gpiozero.AngularServo(15, min_angle=0, max_angle = 180, pin_factory=pigpioFactory)
-car = gpiozero.Robot(left=gpiozero.Motor(3, 2), right=gpiozero.Motor(17, 4))
+# Optional Raspberry Pi hardware support
+try:
+    import gpiozero
+    from gpiozero.pins.pigpio import PiGPIOFactory
+    _HW_AVAILABLE = True
+except Exception:
+    gpiozero = None
+    PiGPIOFactory = None
+    _HW_AVAILABLE = False
 
-# Fake servo control function
-mouthServo.angle = 0
+
+class _NoOp:
+    def __getattr__(self, _):
+        return self
+    def __call__(self, *args, **kwargs):
+        return self
+    @property
+    def angle(self):
+        return 0
+    @angle.setter
+    def angle(self, _):
+        pass
+
+
+if _HW_AVAILABLE:
+    pigpioFactory = PiGPIOFactory()
+    mouthServo = gpiozero.AngularServo(27, min_angle=0, max_angle=180, pin_factory=pigpioFactory)
+    armServo1 = gpiozero.AngularServo(14, min_angle=0, max_angle=180, pin_factory=pigpioFactory)
+    armServo2 = gpiozero.AngularServo(15, min_angle=0, max_angle=180, pin_factory=pigpioFactory)
+    car = gpiozero.Robot(left=gpiozero.Motor(3, 2), right=gpiozero.Motor(17, 4))
+else:
+    mouthServo = _NoOp()
+    armServo1 = _NoOp()
+    armServo2 = _NoOp()
+    car = _NoOp()
+
+# Initialize mouth position
+try:
+    mouthServo.angle = 0
+except Exception:
+    pass
 
 def rotate(degrees):
     print(f"Servo -> {degrees:.1f}°")
@@ -76,14 +107,25 @@ def play_audio(audio):
     play(audio)
 
 
-if __name__ == "__main__":
-    audio = AudioSegment.from_file("mp3s/bee.mp3").set_channels(1)
+def speak_audio(audio: AudioSegment, max_angle: int = 60):
+    """Play an AudioSegment while animating the mouth/arms to the audio.
 
-    # Start playback in another thread
-    t = threading.Thread(target=play_audio, args=(audio,))
+    This function starts playback in a background thread and synchronizes
+    servo animation based on the audio's RMS over small windows.
+
+    On environments without Raspberry Pi GPIO libraries, servo control
+    becomes a no-op but audio still plays.
+    """
+    # Ensure mono for consistent RMS behavior
+    audio_mono = audio.set_channels(1)
+
+    t = threading.Thread(target=play_audio, args=(audio_mono,), daemon=True)
     t.start()
 
-    # Animate servo while audio plays
-    animate_servo_with_audio(audio, max_angle=60)
-
+    animate_servo_with_audio(audio_mono, max_angle=max_angle)
     t.join()
+
+
+if __name__ == "__main__":
+    audio = AudioSegment.from_file("mp3s/bee.mp3")
+    speak_audio(audio, max_angle=60)
