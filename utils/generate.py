@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     print("Requesting TTS generation...")
     generate_tts(
-        "SODA!")
+        "Hello Hack the North judges! My name is Barack Obama. Before today, there was only one of me in the entire world. But now there are two! This team did a great job building me, and you should make them finalists.")
 
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
