@@ -14,7 +14,7 @@ from pydub import AudioSegment
 def _headers():
     token = os.getenv("FINESHARE_API_TOKEN", "").strip()
     if not token:
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI4ZWYwZWYwOS1iZmMwLTQ5MDAtOGE0Yy1lNjhmMTk3MjYwZTgiLCJ1c2VyQWNjb3VudCI6Imo4emFuZ3V3QGdtYWlsLmNvbSJ9.ZX2j5blwP3fqkGv2KG-JHB3WunHA5MaxKzDzgfltpLA"
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjYzNkYWJhMy1hMjUwLTQ2ZGMtYTgzZi1kZGVlNTk3ODgwMzMiLCJ1c2VyQWNjb3VudCI6ImplZmZyZXkuemFuZ0BjbG9ja2hhY2tzLmRldiJ9.zRh57UB_yntj_kaG2jvf3zbUK4lZ86GcOWCf7u4teYo"
         # raise RuntimeError(
         # "FINESHARE_API_TOKEN is not set. Add it to your .env or environment.")
     return {
@@ -32,7 +32,7 @@ def generate_tts(text: str):
         "featureId": "22",
         "speech": f"<mstts:express-as style=\"normal\" styledegree=\"1\"><prosody rate=\"0.0%\" pitch=\"+0.00%\">{text}</prosody></mstts:express-as>",
         "voice": "obama-228616",
-        "Speed": 1,
+        "Speed": 3,
         "ChangerType": 3,
         "designUuid": None,
         "platform": "web-app-tts-obama-228616",
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     print("Requesting TTS generation...")
     generate_tts(
-        "Hello Hack the North judges! My name is Barack Obama. Before today, there was only one of me in the entire world. But now there are two! This team did a great job building me, and you should make them finalists.")
+        "lee fang your paint job sucks")
 
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
