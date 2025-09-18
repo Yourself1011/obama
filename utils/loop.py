@@ -8,11 +8,11 @@ from pydub import AudioSegment
 from speak import speak_audio
 
 # Folder with MP3 files
-AUDIO_DIR = "../mp3s"
+AUDIO_DIR = "/home/jeffrey-zang/obama/mp3s"
 
 # Random interval range (seconds)
-MIN_WAIT = 2
-MAX_WAIT = 4
+MIN_WAIT = 0
+MAX_WAIT = 0.1
 
 
 def get_audio_files():
@@ -36,7 +36,7 @@ def main():
         audio_files = get_audio_files()
         if not audio_files:
             print("No MP3 files found in ./mp3s")
-            time.sleep(5)
+            time.sleep(3)
             continue
 
         random.shuffle(audio_files)
