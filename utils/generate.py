@@ -14,7 +14,7 @@ from pydub import AudioSegment
 def _headers():
     token = os.getenv("FINESHARE_API_TOKEN", "").strip()
     if not token:
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjYzNkYWJhMy1hMjUwLTQ2ZGMtYTgzZi1kZGVlNTk3ODgwMzMiLCJ1c2VyQWNjb3VudCI6ImplZmZyZXkuemFuZ0BjbG9ja2hhY2tzLmRldiJ9.zRh57UB_yntj_kaG2jvf3zbUK4lZ86GcOWCf7u4teYo"
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIwZjA5ZmVmNy04MGNkLTQxNGUtOTQ2Ni1kNjU0MzAyZjhjODciLCJ1c2VyQWNjb3VudCI6ImplZmZyZXkuemFuZ0BlY2xpcHNlZXhwb3Mub3JnIn0.hWaE-WBilrQI6mPT-cfZlnYLxCh-stZewzaM3M2tcQA"
         # raise RuntimeError(
         # "FINESHARE_API_TOKEN is not set. Add it to your .env or environment.")
     return {
@@ -117,7 +117,6 @@ if __name__ == "__main__":
     print("Requesting TTS generation...")
     generate_tts(
         "lee fang your paint job sucks")
-
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
     save_mp3(mp3_url, f"output.mp3")

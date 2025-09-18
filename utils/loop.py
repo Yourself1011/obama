@@ -4,13 +4,15 @@ import random
 import time
 import os
 import pygame
+from pydub import AudioSegment
+from speak import speak_audio
 
 # Folder with MP3 files
-AUDIO_DIR = "./mp3s"
+AUDIO_DIR = "../mp3s"
 
 # Random interval range (seconds)
-MIN_WAIT = 4
-MAX_WAIT = 12
+MIN_WAIT = 2
+MAX_WAIT = 4
 
 
 def get_audio_files():
@@ -40,7 +42,8 @@ def main():
         random.shuffle(audio_files)
         for file in audio_files:
             print(f"Playing: {os.path.basename(file)}")
-            play_audio(file)
+            audio = AudioSegment.from_file(file)
+            speak_audio(audio, max_angle=180)
             wait_time = random.uniform(MIN_WAIT, MAX_WAIT)
             print(f"Waiting {wait_time:.2f} seconds...")
             time.sleep(wait_time)

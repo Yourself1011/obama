@@ -42,15 +42,19 @@ else:
     armServo2 = _NoOp()
     car = _NoOp()
 
-# Initialize mouth position
+# Initialize servo positions
 try:
     mouthServo.angle = 0
+    armServo1.angle = 0
+    armServo2.angle = 180
 except Exception:
     pass
 
+servoStart = 95
+mouthServo.angle = servoStart
 def rotate(degrees):
     print(f"Servo -> {degrees:.1f}°")
-    mouthServo.angle = degrees
+    mouthServo.angle = max(0, min(180, servoStart - degrees))
 
 
 def animate_servo_with_audio(audio, update_interval=0.01, max_angle=30):
@@ -61,7 +65,7 @@ def animate_servo_with_audio(audio, update_interval=0.01, max_angle=30):
     duration_per_sample = 1.0 / sample_rate
     step = int(update_interval / duration_per_sample)
 
-    time.sleep(0.75)
+    time.sleep(1.18)
     start_time = time.time()
 
     arm1cd = start_time + random.uniform(2, 5)
@@ -100,6 +104,8 @@ def animate_servo_with_audio(audio, update_interval=0.01, max_angle=30):
             time.sleep(delay)
 
     # small buffer so playback can finish naturally
+    armServo1.angle = 0
+    armServo2.angle = 180
     time.sleep(0.25)
 
 
@@ -127,5 +133,5 @@ def speak_audio(audio: AudioSegment, max_angle: int = 60):
 
 
 if __name__ == "__main__":
-    audio = AudioSegment.from_file("mp3s/bee.mp3")
-    speak_audio(audio, max_angle=60)
+    audio = AudioSegment.from_file("./output.mp3")
+    speak_audio(audio, max_angle=180)
