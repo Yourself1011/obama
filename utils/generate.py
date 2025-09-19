@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     print("Requesting TTS generation...")
     generate_tts(
-        "lee fang your paint job sucks")
+        "caleb i want to touch you")
     print("Fetching latest MP3 URL...")
     mp3_url = fetch_latest_mp3()
     save_mp3(mp3_url, f"output.mp3")

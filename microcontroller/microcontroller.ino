@@ -1,13 +1,18 @@
-#include <IBusBM.h>
-
 #define ENA 18
 #define ENB 19
 
-IBusBM IBus;
+// Simple iBUS protocol variables
+uint16_t ibusChannels[10];
+bool ibusConnected = false;
+
+// Keyboard control variables
+bool keyboardMode = true;
+unsigned long lastKeyboardCommand = 0;
+const unsigned long KEYBOARD_TIMEOUT = 500; // 500ms timeout for keyboard commands
 
 void setup() {
     Serial.begin(115200);
-    IBus.begin(Serial2, 1);  // iBUS object connected to serial2 RX2 pin using timer 1
+    Serial2.begin(115200);  // iBUS serial connection
     // myservo.attach(servoPin);  // attaches the servo on pin 18 to the servo object (using timer 0)
 
     pinMode(14, OUTPUT);
@@ -15,10 +20,8 @@ void setup() {
     pinMode(26, OUTPUT);
     pinMode(25, OUTPUT);
 
-    ledcSetup(0, 5000, 10);
-    ledcAttachPin(ENA, 0);
-    ledcSetup(1, 5000, 10);
-    ledcAttachPin(ENB, 1);
+    ledcAttach(ENA, 5000, 10);
+    ledcAttach(ENB, 5000, 10);
 }
 
 enum DirectionState {
@@ -36,6 +39,7 @@ struct State {
 };
 
 State currentState = {STOP, 0, 0};
+State keyboardState = {STOP, 0, 0};
 
 void applyState() {
     switch (currentState.direction) {
@@ -60,16 +64,134 @@ void applyState() {
             break;
     }
 
-    ledcWrite(0, map(currentState.xSpeed, 0, 1000, 0, 1023));
-    ledcWrite(1, map(currentState.ySpeed, 0, 1000, 0, 1023));
+    ledcWrite(ENA, map(currentState.xSpeed, 0, 1000, 0, 1023));
+    ledcWrite(ENB, map(currentState.ySpeed, 0, 1000, 0, 1023));
+}
+
+// Simple iBUS protocol reader
+bool readIBus() {
+    static uint8_t ibusBuffer[32];
+    static uint8_t ibusIndex = 0;
+    static unsigned long lastIBusTime = 0;
+    
+    // Reset if too much time has passed
+    if (millis() - lastIBusTime > 100) {
+        ibusIndex = 0;
+    }
+    
+    while (Serial2.available()) {
+        uint8_t val = Serial2.read();
+        lastIBusTime = millis();
+        
+        // Look for iBUS header (0x20 0x40)
+        if (ibusIndex == 0 && val != 0x20) continue;
+        if (ibusIndex == 1 && val != 0x40) {
+            ibusIndex = 0;
+            continue;
+        }
+        
+        ibusBuffer[ibusIndex] = val;
+        ibusIndex++;
+        
+        // Complete packet received (32 bytes)
+        if (ibusIndex >= 32) {
+            // Simple checksum validation
+            uint16_t checksum = 0xFFFF;
+            for (int i = 0; i < 30; i++) {
+                checksum -= ibusBuffer[i];
+            }
+            
+            uint16_t receivedChecksum = (ibusBuffer[31] << 8) | ibusBuffer[30];
+            
+            if (checksum == receivedChecksum) {
+                // Extract channel data
+                for (int i = 0; i < 10; i++) {
+                    int pos = 2 + i * 2;
+                    ibusChannels[i] = (ibusBuffer[pos + 1] << 8) | ibusBuffer[pos];
+                }
+                ibusConnected = true;
+                ibusIndex = 0;
+                return true;
+            }
+            ibusIndex = 0;
+        }
+    }
+    
+    // Check for timeout
+    if (millis() - lastIBusTime > 200) {
+        ibusConnected = false;
+    }
+    
+    return false;
+}
+
+void processKeyboardCommand() {
+    if (Serial.available() > 0) {
+        char command = Serial.read();
+        lastKeyboardCommand = millis();
+        keyboardMode = true;
+        
+        switch (command) {
+            case 'w':
+            case 'W':
+                keyboardState.direction = FORWARD;
+                keyboardState.xSpeed = 800;  // Full speed
+                keyboardState.ySpeed = 800;
+                break;
+            case 's':
+            case 'S':
+                keyboardState.direction = BACKWARD;
+                keyboardState.xSpeed = 800;
+                keyboardState.ySpeed = 800;
+                break;
+            case 'a':
+            case 'A':
+                keyboardState.direction = FORWARD;
+                keyboardState.xSpeed = 400;  // Left wheel slower
+                keyboardState.ySpeed = 800;  // Right wheel faster
+                break;
+            case 'd':
+            case 'D':
+                keyboardState.direction = FORWARD;
+                keyboardState.xSpeed = 800;  // Left wheel faster
+                keyboardState.ySpeed = 400;  // Right wheel slower
+                break;
+            case ' ':  // Spacebar for stop
+            case 'x':
+            case 'X':
+                keyboardState.direction = STOP;
+                keyboardState.xSpeed = 0;
+                keyboardState.ySpeed = 0;
+                break;
+        }
+    }
+    
+    // Check for keyboard timeout
+    if (keyboardMode && (millis() - lastKeyboardCommand > KEYBOARD_TIMEOUT)) {
+        keyboardMode = false;
+        keyboardState.direction = STOP;
+        keyboardState.xSpeed = 0;
+        keyboardState.ySpeed = 0;
+    }
 }
 
 void loop() {
-    int xVal = IBus.readChannel(0);
-    int yVal = IBus.readChannel(1);
-
+    // Process keyboard commands first
+    processKeyboardCommand();
+    
+    // If in keyboard mode, use keyboard state
+    if (keyboardMode) {
+        currentState = keyboardState;
+        applyState();
+        delay(20);
+        return;
+    }
+    
+    // Otherwise, use iBUS control
+    readIBus();
+    
     // Failsafe for lost signal
-    if (xVal == 0 || yVal == 0) {
+    if (!ibusConnected || ibusChannels[0] == 0 || ibusChannels[1] == 0) {
         currentState.direction = STOP;
         currentState.xSpeed = 0;
         currentState.ySpeed = 0;
@@ -77,6 +199,9 @@ void loop() {
         delay(20);
         return;
     }
+    
+    int xVal = ibusChannels[0];
+    int yVal = ibusChannels[1];
 
     const int deadband = 50;
     int throttle = 0;  // 0..1000 magnitude
