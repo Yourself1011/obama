@@ -91,4 +91,5 @@ youtube:
 - [obama's inspirational speech to the people](https://youtube.com/shorts/Fa0FEHtGpoU?feature=share)
 - [obama speaks very clearly and with conviction](https://youtu.be/mz4jaUwGGXY)
 
+also, we are the 4th-most liked hack the north project of all time
 [devpost](https://devpost.com/software/realistic-obama)
